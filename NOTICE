@@ -1,0 +1,10 @@
+Airgap Diff
+Copyright 2026 FootprintAI
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This distribution includes third-party software:
+
+  vendor/diff.min.js — jsdiff (https://github.com/kpdecker/jsdiff)
+  Copyright (c) 2009-2015, Kevin Decker <kpdecker@gmail.com>
+  Licensed under the BSD 3-Clause License (see vendor/LICENSE-jsdiff.txt).

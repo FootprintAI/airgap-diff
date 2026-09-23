@@ -1,0 +1,14 @@
+{
+  "name": "airgap-diff",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A text diff tool that runs entirely in the browser. No server, no upload, no account.",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "node test.js",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0"
+  }
+}
