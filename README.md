@@ -4,6 +4,8 @@ A text diff tool that runs entirely in your browser. No server, no upload, no
 account, no analytics — the page makes exactly one network request (to load
 its own fonts), and the comparison itself never leaves the tab.
 
+**Live: https://footprintai.github.io/airgap-diff/**
+
 ## Use it
 
 Clone the repo and open `index.html` directly, or serve it with anything
