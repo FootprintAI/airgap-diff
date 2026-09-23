@@ -492,6 +492,21 @@ del.word-del, span.char-del {
   box-shadow: 0 0 0 1px var(--del-border);
 }
 
+/* Character-level highlight WITHIN an already-tinted changed-line row (split table cell, or
+   unified +/- line): needs a stronger fill than .word-add/.char-del's own add-bg/del-bg, which
+   would be invisible sitting on a same-colored row background. Reuses the existing border tokens
+   as a stronger fill rather than adding new ones. */
+.intraline-add {
+  background: var(--add-border);
+  border-radius: 3px;
+}
+
+.intraline-del {
+  background: var(--del-border);
+  text-decoration: line-through;
+  border-radius: 3px;
+}
+
 .empty-state {
   padding: 40px 20px;
   text-align: center;

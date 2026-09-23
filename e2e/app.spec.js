@@ -37,6 +37,33 @@ test("line diff, unified view: shows +/- lines", async ({ page }) => {
   await expect(page.locator(".unified-line.add")).toHaveCount(1);
 });
 
+test("split view highlights only the changed characters within a modified line, not the whole line", async ({ page }) => {
+  await compare(page, "order id: 4471, status: 100\n", "order id: 4471, status: 200\n");
+  const leftCell = page.locator(".split-table .row-del.row-add .col-left");
+  const rightCell = page.locator(".split-table .row-del.row-add .col-right");
+  // the unchanged prefix AND the unchanged "00" suffix survive as plain text, outside any
+  // highlight span -- only the single differing digit is wrapped
+  await expect(leftCell).toContainText("order id: 4471, status: 100");
+  await expect(rightCell).toContainText("order id: 4471, status: 200");
+  await expect(leftCell.locator(".intraline-del")).toHaveText("1");
+  await expect(rightCell.locator(".intraline-add")).toHaveText("2");
+});
+
+test("unified view highlights only the changed characters within a modified line", async ({ page }) => {
+  await page.click('.seg[data-layout="unified"]');
+  await compare(page, "order id: 4471, status: 100\n", "order id: 4471, status: 200\n");
+  await expect(page.locator(".unified-line.del .intraline-del")).toHaveText("1");
+  await expect(page.locator(".unified-line.add .intraline-add")).toHaveText("2");
+  await expect(page.locator(".unified-line.del")).toContainText("order id: 4471, status: 100");
+});
+
+test("a pure added or removed line (no counterpart) is not character-diffed", async ({ page }) => {
+  await compare(page, "kept\n", "kept\nbrand new line\n");
+  // an unpaired add has no .intraline-add span -- the whole line is the addition
+  await expect(page.locator(".split-table .row-add .col-right .intraline-add")).toHaveCount(0);
+  await expect(page.locator(".split-table .row-add .col-right")).toContainText("brand new line");
+});
+
 test("word diff highlights only the changed word", async ({ page }) => {
   await page.click('.seg[data-granularity="word"]');
   await compare(page, "the quick fox", "the slow fox");

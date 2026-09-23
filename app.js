@@ -236,12 +236,42 @@
     tr.className = row.type === "change" ? "row-del row-add" : row.type === "add" ? "row-add" : row.type === "del" ? "row-del" : "";
     const leftNum = row.left !== null ? ln.left++ : "";
     const rightNum = row.right !== null ? ln.right++ : "";
+    const [leftHtml, rightHtml] = lineCellHtml(row);
     tr.innerHTML =
       `<td class="ln">${leftNum}</td>` +
-      `<td class="col-left${row.left === null ? " row-empty" : ""}">${row.left !== null ? escapeHtml(row.left) : " "}</td>` +
+      `<td class="col-left${row.left === null ? " row-empty" : ""}">${leftHtml}</td>` +
       `<td class="ln">${rightNum}</td>` +
-      `<td class="col-right${row.right === null ? " row-empty" : ""}">${row.right !== null ? escapeHtml(row.right) : " "}</td>`;
+      `<td class="col-right${row.right === null ? " row-empty" : ""}">${rightHtml}</td>`;
     return tr;
+  }
+
+  // A "change" row (a line paired with its replacement, not a pure add or pure delete) gets a
+  // character-level diff of its own two lines, so only the substring that actually changed is
+  // highlighted -- the way GitHub's line diff does it -- instead of tinting the entire old and
+  // new line as if nothing in them survived. Every other row type has no counterpart line to
+  // diff against, so it just gets its text escaped as-is.
+  function lineCellHtml(row) {
+    if (row.type === "change" && row.left !== null && row.right !== null) {
+      return charDiffHtml(row.left, row.right);
+    }
+    return [row.left !== null ? escapeHtml(row.left) : " ", row.right !== null ? escapeHtml(row.right) : " "];
+  }
+
+  function charDiffHtml(oldLine, newLine) {
+    const parts = Diff.diffChars(oldLine, newLine);
+    let left = "", right = "";
+    for (const part of parts) {
+      const text = escapeHtml(part.value);
+      if (part.added) {
+        right += `<span class="intraline-add">${text}</span>`;
+      } else if (part.removed) {
+        left += `<span class="intraline-del">${text}</span>`;
+      } else {
+        left += text;
+        right += text;
+      }
+    }
+    return [left, right];
   }
 
   function buildUnified(rows) {
@@ -271,22 +301,31 @@
   function unifiedLinesFor(row, ln) {
     const nodes = [];
     if (row.type === "same") {
-      nodes.push(unifiedLine(" ", row.left, ln.left++, ln.right++));
+      nodes.push(unifiedLine(" ", escapeHtml(row.left), ln.left++, ln.right++));
       return nodes;
     }
-    if (row.left !== null) nodes.push(unifiedLine("-", row.left, ln.left++, null, "del"));
-    if (row.right !== null) nodes.push(unifiedLine("+", row.right, null, ln.right++, "add"));
+    if (row.type === "change" && row.left !== null && row.right !== null) {
+      const [leftHtml, rightHtml] = charDiffHtml(row.left, row.right);
+      nodes.push(unifiedLine("-", leftHtml, ln.left++, null, "del"));
+      nodes.push(unifiedLine("+", rightHtml, null, ln.right++, "add"));
+      return nodes;
+    }
+    if (row.left !== null) nodes.push(unifiedLine("-", escapeHtml(row.left), ln.left++, null, "del"));
+    if (row.right !== null) nodes.push(unifiedLine("+", escapeHtml(row.right), null, ln.right++, "add"));
     return nodes;
   }
 
-  function unifiedLine(prefix, text, leftNum, rightNum, cls) {
+  // `html` is pre-escaped (and, for a changed line, already carries its own intraline-add/del
+  // spans) -- callers own escaping so a plain unchanged line and a character-diffed changed line
+  // can share this one renderer without double-escaping the latter's markup.
+  function unifiedLine(prefix, html, leftNum, rightNum, cls) {
     const div = document.createElement("div");
     div.className = "unified-line" + (cls ? " " + cls : "");
     div.innerHTML =
       `<span class="ln${leftNum ? "" : " blank"}">${leftNum || " "}</span>` +
       `<span class="ln${rightNum ? "" : " blank"}">${rightNum || " "}</span>` +
       `<span class="prefix">${prefix}</span>` +
-      `<span>${escapeHtml(text)}</span>`;
+      `<span>${html}</span>`;
     return div;
   }
 
