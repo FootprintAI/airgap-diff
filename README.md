@@ -50,6 +50,12 @@ npm run test:e2e           # exercises the actual UI in a real browser
 `app.js` has no dependencies of its own — the only thing `npm install` is
 for is running the end-to-end tests in `e2e/`.
 
+**No GitHub Actions workflow yet.** A `ci.yml` (syntax check, the vendored-
+library smoke test, and the Playwright suite above, on every push/PR) exists
+but isn't committed — the pushing token doesn't carry the `workflow` OAuth
+scope. Add `.github/workflows/ci.yml` running the three commands above
+whenever that's convenient; until then, run them locally before pushing.
+
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE). Includes a vendored copy of
