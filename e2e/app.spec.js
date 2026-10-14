@@ -199,3 +199,27 @@ test("leaving C empty keeps the classic single comparison", async ({ page }) => 
   await compare(page, "a\n", "b\n");
   await expect(page.locator(".cmp-section")).toHaveCount(0);
 });
+
+test("A -> B and A -> C are rendered side by side, not stacked", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.fill("#left-text", "alpha\nbravo\n");
+  await page.fill("#right-text", "alpha\nBRAVO\n");
+  await page.fill("#third-text", "alpha\nbravo!\n");
+  await page.click("#compare-btn");
+  const b = await page.locator(".cmp-section").nth(0).boundingBox();
+  const c = await page.locator(".cmp-section").nth(1).boundingBox();
+  expect(c.x).toBeGreaterThan(b.x + b.width - 1); // C starts to the right of B
+  expect(Math.abs(c.y - b.y)).toBeLessThan(2); // and on the same row
+});
+
+test("returning to a two-way compare drops the side-by-side layout", async ({ page }) => {
+  await page.fill("#left-text", "a\n");
+  await page.fill("#right-text", "b\n");
+  await page.fill("#third-text", "c\n");
+  await page.click("#compare-btn");
+  await page.click("#back-btn");
+  await page.fill("#third-text", "");
+  await page.click("#compare-btn");
+  await expect(page.locator("#diff-viewport")).not.toHaveClass(/cmp-multi/);
+  await expect(page.locator(".cmp-section")).toHaveCount(0);
+});
