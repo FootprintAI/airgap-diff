@@ -116,6 +116,7 @@
     el.controls.hidden = true;
     el.result.hidden = false;
     el.diffViewport.innerHTML = "";
+    el.diffViewport.classList.remove("cmp-multi");
     el.summary.innerHTML = "";
 
     if (targets.length === 1) {
@@ -124,6 +125,7 @@
       return;
     }
 
+    el.diffViewport.classList.add("cmp-multi");
     const texts = [];
     for (const t of targets) {
       const section = document.createElement("section");
