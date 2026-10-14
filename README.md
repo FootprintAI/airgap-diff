@@ -23,6 +23,8 @@ offline: the diff library is vendored in `vendor/`, not loaded from a CDN.
 
 ## Features
 
+- **Compare against two versions**: fill in the optional third pane (C) to see A → B and
+  A → C side by side in one result, each diffed against A (B and C are not compared to each other)
 - **Line, word, or character** diff granularity
 - **Side-by-side or unified** view (line mode)
 - Ignore whitespace / ignore case

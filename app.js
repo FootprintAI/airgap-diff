@@ -18,12 +18,16 @@
   const el = {
     leftText: document.getElementById("left-text"),
     rightText: document.getElementById("right-text"),
+    thirdText: document.getElementById("third-text"),
     leftOpen: document.getElementById("left-open"),
     rightOpen: document.getElementById("right-open"),
+    thirdOpen: document.getElementById("third-open"),
     leftFile: document.getElementById("left-file"),
     rightFile: document.getElementById("right-file"),
+    thirdFile: document.getElementById("third-file"),
     leftFileName: document.getElementById("left-file-name"),
     rightFileName: document.getElementById("right-file-name"),
+    thirdFileName: document.getElementById("third-file-name"),
     inputView: document.getElementById("input-view"),
     controls: document.querySelector(".controls"),
     layoutGroup: document.getElementById("layout-group"),
@@ -79,6 +83,7 @@
   }
   wireFileOpen(el.leftOpen, el.leftFile, el.leftText, el.leftFileName);
   wireFileOpen(el.rightOpen, el.rightFile, el.rightText, el.rightFileName);
+  wireFileOpen(el.thirdOpen, el.thirdFile, el.thirdText, el.thirdFileName);
 
   el.compareBtn.addEventListener("click", runCompare);
   el.backBtn.addEventListener("click", () => {
@@ -99,20 +104,44 @@
 
   // ---------------------------------------------------------------- compare
 
+  // A is always the base. B is required; C is optional -- when C is filled in, the page shows
+  // two comparisons, A -> B and A -> C, each against the same base (like `git diff A B` and
+  // `git diff A C`), and does NOT compare B with C.
   function runCompare() {
-    const left = el.leftText.value;
-    const right = el.rightText.value;
+    const base = el.leftText.value;
+    const targets = [{ label: "A → B", text: el.rightText.value }];
+    if (el.thirdText.value !== "") targets.push({ label: "A → C", text: el.thirdText.value });
 
     el.inputView.hidden = true;
     el.controls.hidden = true;
     el.result.hidden = false;
     el.diffViewport.innerHTML = "";
+    el.summary.innerHTML = "";
 
-    if (state.granularity === "line") {
-      renderLineDiff(left, right);
-    } else {
-      renderInlineDiff(left, right, state.granularity);
+    if (targets.length === 1) {
+      // classic two-way compare: summary sits in the result header, diff fills the viewport
+      lastDiffText = renderOne(base, targets[0].text, el.summary, el.diffViewport);
+      return;
     }
+
+    const texts = [];
+    for (const t of targets) {
+      const section = document.createElement("section");
+      section.className = "cmp-section";
+      section.innerHTML =
+        `<div class="cmp-head"><h2>${escapeHtml(t.label)}</h2><div class="summary"></div></div>` +
+        `<div class="cmp-body"></div>`;
+      el.diffViewport.appendChild(section);
+      const body = renderOne(base, t.text, section.querySelector(".summary"), section.querySelector(".cmp-body"));
+      texts.push(`=== ${t.label} ===\n${body}`);
+    }
+    lastDiffText = texts.join("\n\n");
+  }
+
+  function renderOne(left, right, summaryEl, viewport) {
+    return state.granularity === "line"
+      ? renderLineDiff(left, right, summaryEl, viewport)
+      : renderInlineDiff(left, right, state.granularity, summaryEl, viewport);
   }
 
   function escapeHtml(s) {
@@ -121,7 +150,7 @@
 
   // ---------------------------------------------------------------- line diff (split + unified)
 
-  function renderLineDiff(left, right) {
+  function renderLineDiff(left, right, summaryEl, viewport) {
     const parts = Diff.diffLines(left, right, {
       ignoreWhitespace: state.ignoreWhitespace,
       ignoreCase: state.ignoreCase,
@@ -168,19 +197,20 @@
       }
     }
 
-    renderSummary(added, removed, "line");
-    lastDiffText = rowsToPlainText(rows);
+    renderSummary(summaryEl, added, removed, "line");
+    const plainText = rowsToPlainText(rows);
 
     if (rows.every((r) => r.type === "same")) {
-      el.diffViewport.innerHTML = '<div class="empty-state">No differences.</div>';
-      return;
+      viewport.innerHTML = '<div class="empty-state">No differences.</div>';
+      return plainText;
     }
 
     if (state.layout === "split") {
-      el.diffViewport.appendChild(buildSplitTable(rows));
+      viewport.appendChild(buildSplitTable(rows));
     } else {
-      el.diffViewport.appendChild(buildUnified(rows));
+      viewport.appendChild(buildUnified(rows));
     }
+    return plainText;
   }
 
   function splitLines(value) {
@@ -393,7 +423,7 @@
 
   // ---------------------------------------------------------------- word / char diff
 
-  function renderInlineDiff(left, right, granularity) {
+  function renderInlineDiff(left, right, granularity, summaryEl, viewport) {
     const options = { ignoreCase: state.ignoreCase };
     const parts =
       granularity === "word"
@@ -419,12 +449,12 @@
       }
     }
 
-    renderSummary(added, removed, granularity);
-    lastDiffText = plain.join("");
+    renderSummary(summaryEl, added, removed, granularity);
+    const plainText = plain.join("");
 
     if (added + removed === 0) {
-      el.diffViewport.innerHTML = '<div class="empty-state">No differences.</div>';
-      return;
+      viewport.innerHTML = '<div class="empty-state">No differences.</div>';
+      return plainText;
     }
 
     const wrap = document.createElement("div");
@@ -433,7 +463,8 @@
     // preserve newlines/whitespace as typed
     wrap.style.whiteSpace = "pre-wrap";
     wrap.style.wordBreak = "break-word";
-    el.diffViewport.appendChild(wrap);
+    viewport.appendChild(wrap);
+    return plainText;
   }
 
   function countWords(s) {
@@ -441,10 +472,10 @@
     return m ? m.length : 0;
   }
 
-  function renderSummary(added, removed, granularity) {
+  function renderSummary(summaryEl, added, removed, granularity) {
     const unit = granularity === "line" ? "line" : granularity === "word" ? "word" : "character";
     const plural = (n) => (n === 1 ? unit : unit + "s");
-    el.summary.innerHTML =
+    summaryEl.innerHTML =
       `<span class="add-count">+${added} ${plural(added)} added</span>` +
       `<span class="del-count">-${removed} ${plural(removed)} removed</span>`;
   }

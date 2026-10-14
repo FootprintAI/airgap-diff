@@ -5,7 +5,7 @@
 const { test, expect } = require("@playwright/test");
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/index.html");
+  await page.goto("index.html");
 });
 
 async function compare(page, left, right) {
@@ -155,4 +155,47 @@ test("back button returns to the editable input view", async ({ page }) => {
   await page.click("#back-btn");
   await expect(page.locator("#input-view")).toBeVisible();
   await expect(page.locator("#result")).toBeHidden();
+});
+
+test("filling in C shows two comparisons, A -> B and A -> C, each against A", async ({ page }) => {
+  await page.fill("#left-text", "alpha\nbravo\ncharlie\n");
+  await page.fill("#right-text", "alpha\nBRAVO\ncharlie\n");
+  await page.fill("#third-text", "alpha\nbravo\nCHARLIE\n");
+  await page.click("#compare-btn");
+
+  const sections = page.locator(".cmp-section");
+  await expect(sections).toHaveCount(2);
+  await expect(sections.nth(0).locator("h2")).toHaveText("A → B");
+  await expect(sections.nth(1).locator("h2")).toHaveText("A → C");
+  // B changed line 2, C changed line 3 -- each diff is against A, so neither shows the other's edit
+  await expect(sections.nth(0)).toContainText("BRAVO");
+  await expect(sections.nth(0)).not.toContainText("CHARLIE");
+  await expect(sections.nth(1)).toContainText("CHARLIE");
+  await expect(sections.nth(1)).not.toContainText("BRAVO");
+});
+
+test("A -> C section reports no differences when C equals A", async ({ page }) => {
+  await page.fill("#left-text", "same\n");
+  await page.fill("#right-text", "different\n");
+  await page.fill("#third-text", "same\n");
+  await page.click("#compare-btn");
+  await expect(page.locator(".cmp-section").nth(0)).toContainText("different");
+  await expect(page.locator(".cmp-section").nth(1)).toContainText("No differences.");
+});
+
+test("copy diff with C labels each comparison", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.fill("#left-text", "a\n");
+  await page.fill("#right-text", "b\n");
+  await page.fill("#third-text", "c\n");
+  await page.click("#compare-btn");
+  await page.click("#copy-btn");
+  const clip = await page.evaluate(() => navigator.clipboard.readText());
+  expect(clip).toContain("=== A → B ===");
+  expect(clip).toContain("=== A → C ===");
+});
+
+test("leaving C empty keeps the classic single comparison", async ({ page }) => {
+  await compare(page, "a\n", "b\n");
+  await expect(page.locator(".cmp-section")).toHaveCount(0);
 });
