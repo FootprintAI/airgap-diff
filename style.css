@@ -148,11 +148,11 @@ body {
 
 .input-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 960px) {
   .input-grid {
     grid-template-columns: 1fr;
   }
@@ -524,4 +524,35 @@ del.word-del, span.char-del {
 
 .foot a {
   color: var(--text-dim);
+}
+
+/* ---------- A -> B / A -> C comparison sections ---------- */
+
+.pane-head .optional {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-faint);
+}
+
+.cmp-section + .cmp-section {
+  border-top: 4px solid var(--border);
+}
+
+.cmp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.cmp-head h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
 }

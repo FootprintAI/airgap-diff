@@ -27,7 +27,7 @@
     <section class="input-grid" id="input-view">
       <div class="pane">
         <div class="pane-head">
-          <label for="left-text">Original</label>
+          <label for="left-text">A · Original</label>
           <div class="pane-actions">
             <span class="file-name" id="left-file-name" hidden></span>
             <button type="button" class="btn-ghost" id="left-open">Open file</button>
@@ -38,7 +38,7 @@
       </div>
       <div class="pane">
         <div class="pane-head">
-          <label for="right-text">Changed</label>
+          <label for="right-text">B · Changed</label>
           <div class="pane-actions">
             <span class="file-name" id="right-file-name" hidden></span>
             <button type="button" class="btn-ghost" id="right-open">Open file</button>
@@ -46,6 +46,17 @@
           </div>
         </div>
         <textarea id="right-text" class="pane-text" spellcheck="false" placeholder="Paste the changed text, or open a file…"></textarea>
+      </div>
+      <div class="pane">
+        <div class="pane-head">
+          <label for="third-text">C · Another change <span class="optional">(optional — compared to A, not B)</span></label>
+          <div class="pane-actions">
+            <span class="file-name" id="third-file-name" hidden></span>
+            <button type="button" class="btn-ghost" id="third-open">Open file</button>
+            <input type="file" id="third-file" hidden />
+          </div>
+        </div>
+        <textarea id="third-text" class="pane-text" spellcheck="false" placeholder="Optional: paste a second changed version to see A → C alongside A → B…"></textarea>
       </div>
     </section>
 
